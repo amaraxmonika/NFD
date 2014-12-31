@@ -233,6 +233,7 @@ private:
   std::queue<cs::Entry*> m_freeCsEntries; // memory pool
 
   // adding new data structure
+  // and this 
   std::queue<cs::Entry*> CSPool; // memory pool for CSQueue
   std::deque<cs::Entry*> CSQueue; // queue of CS Entries
   std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
