@@ -52,6 +52,12 @@ Cs::Cs(size_t nMaxPackets)
   SkipListLayer* zeroLayer = new SkipListLayer();
   m_skipList.push_back(zeroLayer);
 
+
+  // adding new data structures
+  for (size_t i = 0; i < m_nMaxPackets; i++){
+    CSPool.push(new cs::Entry());
+  }
+
   for (size_t i = 0; i < m_nMaxPackets; i++)
     m_freeCsEntries.push(new cs::Entry());
 }
@@ -256,6 +262,10 @@ Cs::insert(const Data& data, bool isUnsolicited)
     {
       evictItem();
     }
+
+  // adding new data structures
+  cs::Entry* temp = insertQueue(data, isUnsolicited); // add to csqueue
+  insertTable(temp, isUnsolicited); // add to csmap
 
   //pointer and insertion status
   std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
@@ -821,6 +831,31 @@ Cs::printSkipList() const
         }
       layer--;
     }
+}
+
+// adding new methods for data structure
+//bool
+//Cs::insertTable(const Data& data, bool isUnsolicited)
+//{
+//  return false;
+// adding this for git
+//}
+// better 
+bool
+Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
+  return false;
+}
+
+cs::Entry*
+Cs::insertQueue(const Data& data, bool isUnsolicited)
+{
+  //cs::Entry* entry = m_freeCsEntries.front();
+  cs::Entry* entry = CSPool.front();
+  //m_freeCsEntries.pop();
+  CSPool.pop();
+  m_nPackets++;
+  entry->setData(data, isUnsolicited);
+  return entry;
 }
 
 } //namespace nfd
