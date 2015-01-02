@@ -75,6 +75,15 @@ Cs::~Cs()
       delete m_freeCsEntries.front();
       m_freeCsEntries.pop();
     }
+
+  // adding for new data structure
+  // all remaining items not evicted from table
+  while (!CSPool.empty())
+  {
+    delete CSPool.front();
+    CSPool.pop();
+
+  }
 }
 
 size_t
@@ -89,19 +98,26 @@ Cs::setLimit(size_t nMaxPackets)
   size_t oldNMaxPackets = m_nMaxPackets;
   m_nMaxPackets = nMaxPackets;
 
+  // remove items from content store
   while (size() > m_nMaxPackets) {
     evictItem();
   }
 
+  // add/remove items from memory pool
   if (m_nMaxPackets >= oldNMaxPackets) {
     for (size_t i = oldNMaxPackets; i < m_nMaxPackets; i++) {
       m_freeCsEntries.push(new cs::Entry());
+      CSPool.push(new cs::Entry()); // chase: new
     }
   }
   else {
     for (size_t i = oldNMaxPackets; i > m_nMaxPackets; i--) {
-      delete m_freeCsEntries.front();
+      delete m_freeCsEntries.front(); 
       m_freeCsEntries.pop();
+
+      // chase: new
+      delete CSPool.front();
+      CSPool.pop();
     }
   }
 }
