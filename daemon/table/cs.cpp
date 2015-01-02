@@ -851,7 +851,19 @@ Cs::printSkipList() const
 // better 
 bool
 Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
+
+  // First we need to retrieve the char* name of entry for
+  // hash function
+  std::string key = entry->getName().toUri();
+
+  // Using the uri of entry we add it to the hash map
+  CSMap[key] = entry;
   
+  return true; // need to change
+}
+
+bool
+Cs::eraseFromTable(cs::Entry* entry){
   return false;
 }
 
@@ -861,7 +873,7 @@ Cs::insertQueue(const Data& data, bool isUnsolicited)
   // get memory from pool
   cs::Entry* entry = CSPool.front();
   CSPool.pop();
-  m_nPackets++;
+  m_nPackets++; // increment number of packets in map
   
   // set contents of new entry
   entry->setData(data, isUnsolicited);
@@ -876,5 +888,12 @@ Cs::insertQueue(const Data& data, bool isUnsolicited)
 
   return entry;
 }
+
+bool
+Cs::eraseFromQueue(cs::Entry* entry){
+
+  return false;
+}
+
 
 } //namespace nfd

@@ -222,8 +222,16 @@ private:
   // adding method declarations for new data structures
   bool
   insertTable(cs::Entry* entry, bool isUnsolicited);
+
+  bool
+  eraseFromTable(cs::Entry* entry);
+
   cs::Entry*
   insertQueue(const Data& data, bool isUnsolicited);
+
+  bool
+  eraseFromQueue(cs::Entry* entry);
+
 
 private:
   SkipList m_skipList;
