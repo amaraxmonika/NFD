@@ -851,18 +851,29 @@ Cs::printSkipList() const
 // better 
 bool
 Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
+  
   return false;
 }
 
 cs::Entry*
 Cs::insertQueue(const Data& data, bool isUnsolicited)
 {
-  //cs::Entry* entry = m_freeCsEntries.front();
+  // get memory from pool
   cs::Entry* entry = CSPool.front();
-  //m_freeCsEntries.pop();
   CSPool.pop();
   m_nPackets++;
+  
+  // set contents of new entry
   entry->setData(data, isUnsolicited);
+
+  // finally add new entry to end of queue
+  // if entry unsolicited, add to front of queue 
+  // to be evicted first
+  if (isUnsolicited)
+    CSQueue.push_front(entry);
+  else
+    CSQueue.push_back(entry);
+
   return entry;
 }
 
