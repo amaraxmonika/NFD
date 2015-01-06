@@ -42,6 +42,7 @@
 #include <queue>
 #include <deque>
 #include <map>
+//#include <unordered_map>
 #include <list>
 namespace nfd {
 
@@ -229,8 +230,8 @@ private:
   cs::Entry*
   insertQueue(const Data& data, bool isUnsolicited);
 
-  bool
-  eraseFromQueue(cs::Entry* entry);
+  cs::Entry*
+  eraseFromQueue();
 
 
 private:
@@ -244,6 +245,7 @@ private:
   // and this 
   std::queue<cs::Entry*> CSPool; // memory pool for CSQueue
   std::deque<cs::Entry*> CSQueue; // queue of CS Entries
+  //std::unordered_map<std::string,cs::Entry*> CSMap; // map of CS Entries
   std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
 };
 

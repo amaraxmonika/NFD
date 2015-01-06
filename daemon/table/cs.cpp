@@ -375,6 +375,30 @@ Cs::evictItem()
 {
   NFD_LOG_TRACE("evictItem()");
 
+  // added by chase for new hash map
+  // Implementing simple eviction policy where
+  // we only remove the first element in the queue
+  if (!CSQueue.empty())
+  {
+    // get first item in queue
+    cs::Entry* entry = CSQueue.front();
+    std::string key = entry->getName().toUri();
+
+    // remove entry from CSMap
+    CSMap.erase(key);
+
+    // release all references to entry
+    // and add entry back to memory pool
+    entry->release();
+    CSPool.push(entry);
+
+   
+    //m_nPackets--;
+
+  }
+  
+
+  // first evict by unsolicited
   if (!m_cleanupIndex.get<unsolicited>().empty() &&
       (*m_cleanupIndex.get<unsolicited>().begin())->isUnsolicited())
   {
@@ -385,6 +409,7 @@ Cs::evictItem()
     return true;
   }
 
+  // evict by staleness
   if (!m_cleanupIndex.get<byStaleness>().empty() &&
       (*m_cleanupIndex.get<byStaleness>().begin())->getStaleTime() < time::steady_clock::now())
   {
@@ -395,6 +420,7 @@ Cs::evictItem()
     return true;
   }
 
+  // evict by arrival
   if (!m_cleanupIndex.get<byArrival>().empty())
   {
     NFD_LOG_TRACE("Evict from arrival queue");
@@ -753,6 +779,15 @@ Cs::erase(const Name& exactName)
   NFD_LOG_TRACE("insert() " << exactName << ", "
                 << "skipList size " << size());
 
+  // added by chase for new data structure
+  // Get Entity
+  std::map<std::string,cs::Entry*>::iterator it;
+  it=CSMap.find(exactName.toUri());
+  it->second->release(); 
+  CSMap.erase (it); 
+  CSPool.push(it->second);
+  //m_nPackets--;
+
   bool isIterated = false;
   SkipListLayer::iterator updateTable[SKIPLIST_MAX_LAYERS];
   SkipList::reverse_iterator topLayer = m_skipList.rbegin();
@@ -864,7 +899,19 @@ Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
 
 bool
 Cs::eraseFromTable(cs::Entry* entry){
-  return false;
+
+  // need to add something that will deal with collisions
+  //entry->release();
+  //m_freeCsEntries.push(entry);
+  //m_nPackets--;
+
+  // access iterator
+  std::map<std::string,cs::Entry*>::iterator it;
+  it=CSMap.find(entry->getName().toUri());
+  CSMap.erase (it); 
+
+  return true;
+
 }
 
 cs::Entry*
@@ -889,10 +936,19 @@ Cs::insertQueue(const Data& data, bool isUnsolicited)
   return entry;
 }
 
-bool
-Cs::eraseFromQueue(cs::Entry* entry){
+cs::Entry*
+Cs::eraseFromQueue(){
 
-  return false;
+  // Pop the first element in the queue
+  cs::Entry* entry = CSQueue.front();
+
+  // release all references to it
+  // and add it back to memory pool
+  entry->release();
+  CSPool.push(entry);
+  //m_nPackets--;
+  
+  return entry;
 }
 
 
