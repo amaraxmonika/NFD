@@ -68,13 +68,13 @@ Cs::~Cs()
   while (evictItem())
     ;
 
-  BOOST_ASSERT(m_freeCsEntries.size() == m_nMaxPackets);
+  //BOOST_ASSERT(m_freeCsEntries.size() == m_nMaxPackets);
 
-  while (!m_freeCsEntries.empty())
-    {
-      delete m_freeCsEntries.front();
-      m_freeCsEntries.pop();
-    }
+  //while (!m_freeCsEntries.empty())
+  // {
+  //  delete m_freeCsEntries.front();
+  // m_freeCsEntries.pop();
+  //}
 
   // adding for new data structure
   // all remaining items not evicted from table
@@ -106,14 +106,14 @@ Cs::setLimit(size_t nMaxPackets)
   // add/remove items from memory pool
   if (m_nMaxPackets >= oldNMaxPackets) {
     for (size_t i = oldNMaxPackets; i < m_nMaxPackets; i++) {
-      m_freeCsEntries.push(new cs::Entry());
+      //m_freeCsEntries.push(new cs::Entry());
       CSPool.push(new cs::Entry()); // chase: new
     }
   }
   else {
     for (size_t i = oldNMaxPackets; i > m_nMaxPackets; i--) {
-      delete m_freeCsEntries.front(); 
-      m_freeCsEntries.pop();
+      //delete m_freeCsEntries.front(); 
+      //m_freeCsEntries.pop();
 
       // chase: new
       delete CSPool.front();
@@ -129,6 +129,7 @@ Cs::getLimit() const
 }
 
 //Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
+/*
 std::pair<cs::Entry*, bool>
 Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 {
@@ -268,6 +269,7 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 
   return std::make_pair(entry, true);
 }
+*/
 
 bool
 Cs::insert(const Data& data, bool isUnsolicited)
@@ -282,20 +284,22 @@ Cs::insert(const Data& data, bool isUnsolicited)
   // adding new data structures
   cs::Entry* temp = insertQueue(data, isUnsolicited); // add to csqueue
   insertTable(temp, isUnsolicited); // add to csmap
+  m_nPackets++;
 
   //pointer and insertion status
-  std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
+  //std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
 
   //new entry
-  if (static_cast<bool>(entry.first) && (entry.second == true))
-    {
-      m_cleanupIndex.push_back(entry.first);
-      return true;
-    }
+  //if (static_cast<bool>(entry.first) && (entry.second == true))
+  //  {
+  //    m_cleanupIndex.push_back(entry.first);
+  //    return true;
+  //  }
 
   return false;
 }
 
+/*
 size_t
 Cs::pickRandomLayer() const
 {
@@ -309,6 +313,7 @@ Cs::pickRandomLayer() const
   }
   return layer;
 }
+*/
 
 bool
 Cs::isFull() const
@@ -319,6 +324,7 @@ Cs::isFull() const
   return false;
 }
 
+/*
 bool
 Cs::eraseFromSkipList(cs::Entry* entry)
 {
@@ -369,6 +375,7 @@ Cs::eraseFromSkipList(cs::Entry* entry)
 
   return isErased;
 }
+*/
 
 bool
 Cs::evictItem()
@@ -382,7 +389,8 @@ Cs::evictItem()
   {
     // get first item in queue
     cs::Entry* entry = CSQueue.front();
-    std::string key = entry->getName().toUri();
+    //std::string key = entry->getName().toUri();
+    Name key = entry->getName();
 
     // remove entry from CSMap
     CSMap.erase(key);
@@ -393,10 +401,12 @@ Cs::evictItem()
     CSPool.push(entry);
 
    
-    //m_nPackets--;
+    m_nPackets--;
+    return true;
 
   }
   
+/*
 
   // first evict by unsolicited
   if (!m_cleanupIndex.get<unsolicited>().empty() &&
@@ -430,6 +440,7 @@ Cs::evictItem()
     return true;
   }
 
+*/
   return false;
 }
 
@@ -437,7 +448,12 @@ const Data*
 Cs::find(const Interest& interest) const
 {
   NFD_LOG_TRACE("find() " << interest.getName());
+  //std::map<std::string,cs::Entry*>::const_iterator it;
+  std::map<Name,cs::Entry*>::const_iterator it;
+  it = CSMap.find(interest.getName());
+  return &(it->second->getData());
 
+/*
   bool isIterated = false;
   SkipList::const_reverse_iterator topLayer = m_skipList.rbegin();
   SkipListLayer::iterator head = (*topLayer)->begin();
@@ -499,8 +515,10 @@ Cs::find(const Interest& interest) const
     }
 
   return 0;
+*/
 }
 
+/*
 const Data*
 Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const
 {
@@ -647,6 +665,7 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
   return 0;
 }
 
+*/
 bool
 Cs::doesComplyWithSelectors(const Interest& interest,
                             cs::Entry* entry,
@@ -781,12 +800,15 @@ Cs::erase(const Name& exactName)
 
   // added by chase for new data structure
   // Get Entity
-  std::map<std::string,cs::Entry*>::iterator it;
-  it=CSMap.find(exactName.toUri());
+  //std::map<std::string,cs::Entry*>::iterator it;
+  std::map<Name,cs::Entry*>::iterator it;
+  it=CSMap.find(exactName);
   it->second->release(); 
   CSMap.erase (it); 
   CSPool.push(it->second);
-  //m_nPackets--;
+  m_nPackets--;
+  return;
+/*
 
   bool isIterated = false;
   SkipListLayer::iterator updateTable[SKIPLIST_MAX_LAYERS];
@@ -858,8 +880,10 @@ Cs::erase(const Name& exactName)
       NFD_LOG_TRACE("Found target " << (*head)->getFullName());
       eraseFromSkipList(*head);
     }
+*/
 }
 
+/*
 void
 Cs::printSkipList() const
 {
@@ -876,6 +900,7 @@ Cs::printSkipList() const
     }
 }
 
+*/
 // adding new methods for data structure
 //bool
 //Cs::insertTable(const Data& data, bool isUnsolicited)
@@ -889,7 +914,8 @@ Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
 
   // First we need to retrieve the char* name of entry for
   // hash function
-  std::string key = entry->getName().toUri();
+  //std::string key = entry->getName().toUri();
+  Name key = entry->getName();
 
   // Using the uri of entry we add it to the hash map
   CSMap[key] = entry;
@@ -907,8 +933,10 @@ Cs::eraseFromTable(cs::Entry* entry)
   //m_nPackets--;
 
   // access iterator
-  std::map<std::string,cs::Entry*>::iterator it;
-  it=CSMap.find(entry->getName().toUri());
+  //std::map<std::string,cs::Entry*>::iterator it;
+  std::map<Name,cs::Entry*>::iterator it;
+  //it=CSMap.find(entry->getName().toUri());
+  it=CSMap.find(entry->getName());
   CSMap.erase (it); 
 
   return true;

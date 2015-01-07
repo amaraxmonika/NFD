@@ -168,26 +168,26 @@ private:
    *  Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
    *  \return{ returns random layer (number) in a skip list}
    */
-  size_t
-  pickRandomLayer() const;
+  //size_t
+  //pickRandomLayer() const;
 
   /** \brief Inserts a new Content Store Entry in a skip list
    *  \return{ returns a pair containing a pointer to the CS Entry,
    *  and a flag indicating if the entry was newly created (True) or refreshed (False) }
    */
-  std::pair<cs::Entry*, bool>
-  insertToSkipList(const Data& data, bool isUnsolicited = false);
+  //std::pair<cs::Entry*, bool>
+  //insertToSkipList(const Data& data, bool isUnsolicited = false);
 
   /** \brief Removes a specific CS Entry from all layers of a skip list
    *  \return{ returns True if CS Entry was succesfully removed and False if CS Entry was not found}
    */
-  bool
-  eraseFromSkipList(cs::Entry* entry);
+  //bool
+  //eraseFromSkipList(cs::Entry* entry);
 
   /** \brief Prints contents of the skip list, starting from the top layer
    */
-  void
-  printSkipList() const;
+  //void
+  //printSkipList() const;
 
   /** \brief Implements child selector (leftmost, rightmost, undeclared).
    *  Operates on the first layer of a skip list.
@@ -201,8 +201,8 @@ private:
    *  other selectors. Returned CS entry is the leftmost child of the rightmost child.
    *  \return{ the best match, if any; otherwise 0 }
    */
-  const Data*
-  selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const;
+  //const Data*
+  //selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const;
 
   /** \brief checks if Content Store entry satisfies Interest selectors (MinSuffixComponents,
    *  MaxSuffixComponents, Implicit Digest, MustBeFresh)
@@ -235,18 +235,19 @@ private:
 
 
 private:
-  SkipList m_skipList;
-  CleanupIndex m_cleanupIndex;
+  //SkipList m_skipList;
+  //CleanupIndex m_cleanupIndex;
   size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
   size_t m_nPackets;    // current number of packets in Content Store
-  std::queue<cs::Entry*> m_freeCsEntries; // memory pool
+  //std::queue<cs::Entry*> m_freeCsEntries; // memory pool
 
   // adding new data structure
   // and this 
+  std::map<Name,cs::Entry*> CSMap;
   std::queue<cs::Entry*> CSPool; // memory pool for CSQueue
   std::deque<cs::Entry*> CSQueue; // queue of CS Entries
   //std::unordered_map<std::string,cs::Entry*> CSMap; // map of CS Entries
-  std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
+  //std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
 };
 
 } // namespace nfd
