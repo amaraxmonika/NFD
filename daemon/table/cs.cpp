@@ -285,6 +285,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
   cs::Entry* temp = insertQueue(data, isUnsolicited); // add to csqueue
   insertTable(temp, isUnsolicited); // add to csmap
   m_nPackets++;
+  return true;
 
   //pointer and insertion status
   //std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
@@ -296,7 +297,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
   //    return true;
   //  }
 
-  return false;
+  //return false;
 }
 
 /*
@@ -380,7 +381,7 @@ Cs::eraseFromSkipList(cs::Entry* entry)
 bool
 Cs::evictItem()
 {
-  NFD_LOG_TRACE("evictItem()");
+  //NFD_LOG_TRACE("evictItem()");
 
   // added by chase for new hash map
   // Implementing simple eviction policy where
@@ -389,8 +390,8 @@ Cs::evictItem()
   {
     // get first item in queue
     cs::Entry* entry = CSQueue.front();
-    //std::string key = entry->getName().toUri();
-    Name key = entry->getName();
+    std::string key = entry->getName().toUri();
+    //Name key = entry->getName();
 
     // remove entry from CSMap
     CSMap.erase(key);
@@ -448,10 +449,17 @@ const Data*
 Cs::find(const Interest& interest) const
 {
   NFD_LOG_TRACE("find() " << interest.getName());
-  //std::map<std::string,cs::Entry*>::const_iterator it;
-  std::map<Name,cs::Entry*>::const_iterator it;
-  it = CSMap.find(interest.getName());
-  return &(it->second->getData());
+  NFD_LOG_TRACE("find().getUri() " << interest.getName().toUri());
+  std::map<std::string,cs::Entry*>::const_iterator it;
+  //std::map<Name,cs::Entry*>::const_iterator it;
+  it = CSMap.find(interest.getName().toUri());
+  if(it!=CSMap.end())
+  {
+      NFD_LOG_TRACE("find():and(it->second... " << it->second->getName());
+      return &(it->second->getData());
+  }
+  else
+      return 0;
 
 /*
   bool isIterated = false;
@@ -795,15 +803,15 @@ Cs::recognizeInterestWithDigest(const Interest& interest, cs::Entry* entry) cons
 void
 Cs::erase(const Name& exactName)
 {
-  NFD_LOG_TRACE("insert() " << exactName << ", "
+  NFD_LOG_TRACE("erase() " << exactName << ", "
                 << "skipList size " << size());
 
   // added by chase for new data structure
   // Get Entity
-  //std::map<std::string,cs::Entry*>::iterator it;
-  std::map<Name,cs::Entry*>::iterator it;
-  it=CSMap.find(exactName);
-  it->second->release(); 
+  std::map<std::string,cs::Entry*>::iterator it;
+  //std::map<Name,cs::Entry*>::iterator it;
+  it=CSMap.find(exactName.toUri());
+  //it->second->release(); 
   CSMap.erase (it); 
   CSPool.push(it->second);
   m_nPackets--;
@@ -912,10 +920,11 @@ Cs::printSkipList() const
 bool
 Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
 
+  NFD_LOG_TRACE("insertTable() " << entry->getName().toUri() );
   // First we need to retrieve the char* name of entry for
   // hash function
-  //std::string key = entry->getName().toUri();
-  Name key = entry->getName();
+  std::string key = entry->getName().toUri();
+  //Name key = entry->getName();
 
   // Using the uri of entry we add it to the hash map
   CSMap[key] = entry;
@@ -933,10 +942,10 @@ Cs::eraseFromTable(cs::Entry* entry)
   //m_nPackets--;
 
   // access iterator
-  //std::map<std::string,cs::Entry*>::iterator it;
-  std::map<Name,cs::Entry*>::iterator it;
-  //it=CSMap.find(entry->getName().toUri());
-  it=CSMap.find(entry->getName());
+  std::map<std::string,cs::Entry*>::iterator it;
+  //std::map<Name,cs::Entry*>::iterator it;
+  it=CSMap.find(entry->getName().toUri());
+  //it=CSMap.find(entry->getName());
   CSMap.erase (it); 
 
   return true;
