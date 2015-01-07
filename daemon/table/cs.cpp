@@ -49,8 +49,8 @@ Cs::Cs(size_t nMaxPackets)
   : m_nMaxPackets(nMaxPackets)
   , m_nPackets(0)
 {
-  SkipListLayer* zeroLayer = new SkipListLayer();
-  m_skipList.push_back(zeroLayer);
+  //SkipListLayer* zeroLayer = new SkipListLayer();
+  //m_skipList.push_back(zeroLayer);
 
 
   // adding new data structures
@@ -58,8 +58,8 @@ Cs::Cs(size_t nMaxPackets)
     CSPool.push(new cs::Entry());
   }
 
-  for (size_t i = 0; i < m_nMaxPackets; i++)
-    m_freeCsEntries.push(new cs::Entry());
+  //for (size_t i = 0; i < m_nMaxPackets; i++)
+   // m_freeCsEntries.push(new cs::Entry());
 }
 
 Cs::~Cs()
