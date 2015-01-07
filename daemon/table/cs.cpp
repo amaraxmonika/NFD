@@ -389,7 +389,7 @@ Cs::evictItem()
 
     // release all references to entry
     // and add entry back to memory pool
-    entry->release();
+    //entry->release();
     CSPool.push(entry);
 
    
@@ -898,7 +898,8 @@ Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
 }
 
 bool
-Cs::eraseFromTable(cs::Entry* entry){
+Cs::eraseFromTable(cs::Entry* entry)
+{
 
   // need to add something that will deal with collisions
   //entry->release();
