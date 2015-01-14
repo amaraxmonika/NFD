@@ -323,11 +323,9 @@ Cs::erase(const Name& exactName)
   // added by chase for new data structure
   // Get Entity
   boost::unordered_map<std::string,cs::Entry*>::iterator it;
-  //std::map<std::string,cs::Entry*>::iterator it;
-  //std::map<Name,cs::Entry*>::iterator it;
   it=CSMap.find(exactName.toUri());
-  //it->second->release(); 
   CSMap.erase (it); 
+  it->second->release(); 
   CSPool.push(it->second);
   m_nPackets--;
   return;
@@ -406,7 +404,6 @@ Cs::eraseFromQueue(){
   // and add it back to memory pool
   entry->release();
   CSPool.push(entry);
-  //m_nPackets--;
   
   return entry;
 }

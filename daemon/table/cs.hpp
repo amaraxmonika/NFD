@@ -237,8 +237,6 @@ private:
 
 
 private:
-  //SkipList m_skipList;
-  //CleanupIndex m_cleanupIndex;
   size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
   size_t m_nPackets;    // current number of packets in Content Store
 
