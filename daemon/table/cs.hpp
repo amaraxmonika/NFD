@@ -45,7 +45,6 @@
 #include <queue>
 #include <deque>
 #include <map>
-//#include <unordered_map>
 #include <list>
 namespace nfd {
 
@@ -242,14 +241,12 @@ private:
   //CleanupIndex m_cleanupIndex;
   size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
   size_t m_nPackets;    // current number of packets in Content Store
-  //std::queue<cs::Entry*> m_freeCsEntries; // memory pool
 
   // adding new data structure
   // and this 
   std::queue<cs::Entry*> CSPool; // memory pool for CSQueue
   std::deque<cs::Entry*> CSQueue; // queue of CS Entries
   boost::unordered_map<std::string,cs::Entry*> CSMap; // map of CS Entries
-  //std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
 };
 
 } // namespace nfd

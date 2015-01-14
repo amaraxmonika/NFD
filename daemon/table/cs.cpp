@@ -49,17 +49,11 @@ Cs::Cs(size_t nMaxPackets)
   : m_nMaxPackets(nMaxPackets)
   , m_nPackets(0)
 {
-  //SkipListLayer* zeroLayer = new SkipListLayer();
-  //m_skipList.push_back(zeroLayer);
-
-
   // adding new data structures
   for (size_t i = 0; i < m_nMaxPackets; i++){
     CSPool.push(new cs::Entry());
   }
 
-  //for (size_t i = 0; i < m_nMaxPackets; i++)
-   // m_freeCsEntries.push(new cs::Entry());
 }
 
 Cs::~Cs()
@@ -67,14 +61,6 @@ Cs::~Cs()
   // evict all items from CS
   while (evictItem())
     ;
-
-  //BOOST_ASSERT(m_freeCsEntries.size() == m_nMaxPackets);
-
-  //while (!m_freeCsEntries.empty())
-  // {
-  //  delete m_freeCsEntries.front();
-  // m_freeCsEntries.pop();
-  //}
 
   // adding for new data structure
   // all remaining items not evicted from table
@@ -106,14 +92,11 @@ Cs::setLimit(size_t nMaxPackets)
   // add/remove items from memory pool
   if (m_nMaxPackets >= oldNMaxPackets) {
     for (size_t i = oldNMaxPackets; i < m_nMaxPackets; i++) {
-      //m_freeCsEntries.push(new cs::Entry());
       CSPool.push(new cs::Entry()); // chase: new
     }
   }
   else {
     for (size_t i = oldNMaxPackets; i > m_nMaxPackets; i--) {
-      //delete m_freeCsEntries.front(); 
-      //m_freeCsEntries.pop();
 
       // chase: new
       delete CSPool.front();
@@ -127,149 +110,6 @@ Cs::getLimit() const
 {
   return m_nMaxPackets;
 }
-
-//Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
-/*
-std::pair<cs::Entry*, bool>
-Cs::insertToSkipList(const Data& data, bool isUnsolicited)
-{
-  NFD_LOG_TRACE("insertToSkipList() " << data.getFullName() << ", "
-                << "skipList size " << size());
-
-  BOOST_ASSERT(m_cleanupIndex.size() <= size());
-  BOOST_ASSERT(m_freeCsEntries.size() > 0);
-
-  // take entry for the memory pool
-  cs::Entry* entry = m_freeCsEntries.front();
-  m_freeCsEntries.pop();
-  m_nPackets++;
-  entry->setData(data, isUnsolicited);
-
-  bool insertInFront = false;
-  bool isIterated = false;
-  SkipList::reverse_iterator topLayer = m_skipList.rbegin();
-  SkipListLayer::iterator updateTable[SKIPLIST_MAX_LAYERS];
-  SkipListLayer::iterator head = (*topLayer)->begin();
-
-  if (!(*topLayer)->empty())
-    {
-      //start from the upper layer towards bottom
-      int layer = m_skipList.size() - 1;
-      for (SkipList::reverse_iterator rit = topLayer; rit != m_skipList.rend(); ++rit)
-        {
-          //if we didn't do any iterations on the higher layers, start from the begin() again
-          if (!isIterated)
-            head = (*rit)->begin();
-
-          updateTable[layer] = head;
-
-          if (head != (*rit)->end())
-            {
-              // it can happen when begin() contains the element in front of which we need to insert
-              if (!isIterated && ((*head)->getFullName() >= entry->getFullName()))
-                {
-                  --updateTable[layer];
-                  insertInFront = true;
-                }
-              else
-                {
-                  SkipListLayer::iterator it = head;
-
-                  while ((*it)->getFullName() < entry->getFullName())
-                    {
-                      head = it;
-                      updateTable[layer] = it;
-                      isIterated = true;
-
-                      ++it;
-                      if (it == (*rit)->end())
-                        break;
-                    }
-                }
-            }
-
-          if (layer > 0)
-            head = (*head)->getIterators().find(layer - 1)->second; // move HEAD to the lower layer
-
-          layer--;
-        }
-    }
-  else
-    {
-      updateTable[0] = (*topLayer)->begin(); //initialization
-    }
-
-  head = updateTable[0];
-  ++head; // look at the next slot to check if it contains a duplicate
-
-  bool isCsEmpty = (size() == 0);
-  bool isInBoundaries = (head != (*m_skipList.begin())->end());
-  bool isNameIdentical = false;
-  if (!isCsEmpty && isInBoundaries)
-    {
-      isNameIdentical = (*head)->getFullName() == entry->getFullName();
-    }
-
-  //check if this is a duplicate packet
-  if (isNameIdentical)
-    {
-      NFD_LOG_TRACE("Duplicate name (with digest)");
-
-      (*head)->setData(data, isUnsolicited); //updates stale time
-
-      // new entry not needed, returning to the pool
-      entry->release();
-      m_freeCsEntries.push(entry);
-      m_nPackets--;
-
-      return std::make_pair(*head, false);
-    }
-
-  NFD_LOG_TRACE("Not a duplicate");
-
-  size_t randomLayer = pickRandomLayer();
-
-  while (m_skipList.size() < randomLayer + 1)
-    {
-      SkipListLayer* newLayer = new SkipListLayer();
-      m_skipList.push_back(newLayer);
-
-      updateTable[(m_skipList.size() - 1)] = newLayer->begin();
-    }
-
-  size_t layer = 0;
-  for (SkipList::iterator i = m_skipList.begin();
-       i != m_skipList.end() && layer <= randomLayer; ++i)
-    {
-      if (updateTable[layer] == (*i)->end() && !insertInFront)
-        {
-          (*i)->push_back(entry);
-          SkipListLayer::iterator last = (*i)->end();
-          --last;
-          entry->setIterator(layer, last);
-
-          NFD_LOG_TRACE("pushback " << &(*last));
-        }
-      else if (updateTable[layer] == (*i)->end() && insertInFront)
-        {
-          (*i)->push_front(entry);
-          entry->setIterator(layer, (*i)->begin());
-
-          NFD_LOG_TRACE("pushfront ");
-        }
-      else
-        {
-          NFD_LOG_TRACE("insertafter");
-          ++updateTable[layer]; // insert after
-          SkipListLayer::iterator position = (*i)->insert(updateTable[layer], entry);
-          entry->setIterator(layer, position); // save iterator where item was inserted
-        }
-      layer++;
-    }
-
-  return std::make_pair(entry, true);
-}
-*/
 
 bool
 Cs::insert(const Data& data, bool isUnsolicited)
@@ -287,34 +127,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
   m_nPackets++;
   return true;
 
-  //pointer and insertion status
-  //std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
-
-  //new entry
-  //if (static_cast<bool>(entry.first) && (entry.second == true))
-  //  {
-  //    m_cleanupIndex.push_back(entry.first);
-  //    return true;
-  //  }
-
-  //return false;
 }
-
-/*
-size_t
-Cs::pickRandomLayer() const
-{
-  static boost::random::bernoulli_distribution<> dist(SKIPLIST_PROBABILITY);
-  // TODO rewrite using geometry_distribution
-  size_t layer;
-  for (layer = 0; layer < SKIPLIST_MAX_LAYERS; ++layer) {
-    if (!dist(getGlobalRng())) {
-      break;
-    }
-  }
-  return layer;
-}
-*/
 
 bool
 Cs::isFull() const
@@ -324,59 +137,6 @@ Cs::isFull() const
 
   return false;
 }
-
-/*
-bool
-Cs::eraseFromSkipList(cs::Entry* entry)
-{
-  NFD_LOG_TRACE("eraseFromSkipList() "  << entry->getFullName());
-  NFD_LOG_TRACE("SkipList size " << size());
-
-  bool isErased = false;
-
-  const std::map<int, std::list<cs::Entry*>::iterator>& iterators = entry->getIterators();
-
-  if (!iterators.empty())
-    {
-      int layer = 0;
-
-      for (SkipList::iterator it = m_skipList.begin(); it != m_skipList.end(); )
-        {
-          std::map<int, std::list<cs::Entry*>::iterator>::const_iterator i = iterators.find(layer);
-
-          if (i != iterators.end())
-            {
-              (*it)->erase(i->second);
-              entry->removeIterator(layer);
-              isErased = true;
-
-              //remove layers that do not contain any elements (starting from the second layer)
-              if ((layer != 0) && (*it)->empty())
-                {
-                  delete *it;
-                  it = m_skipList.erase(it);
-                }
-              else
-                ++it;
-
-              layer++;
-            }
-          else
-            break;
-      }
-    }
-
-  //delete entry;
-  if (isErased)
-  {
-    entry->release();
-    m_freeCsEntries.push(entry);
-    m_nPackets--;
-  }
-
-  return isErased;
-}
-*/
 
 bool
 Cs::evictItem()
@@ -391,7 +151,6 @@ Cs::evictItem()
     // get first item in queue
     cs::Entry* entry = CSQueue.front();
     std::string key = entry->getName().toUri();
-    //Name key = entry->getName();
 
     // remove entry from CSMap
     CSMap.erase(key);
@@ -407,41 +166,6 @@ Cs::evictItem()
 
   }
   
-/*
-
-  // first evict by unsolicited
-  if (!m_cleanupIndex.get<unsolicited>().empty() &&
-      (*m_cleanupIndex.get<unsolicited>().begin())->isUnsolicited())
-  {
-    NFD_LOG_TRACE("Evict from unsolicited queue");
-
-    eraseFromSkipList(*m_cleanupIndex.get<unsolicited>().begin());
-    m_cleanupIndex.get<unsolicited>().erase(m_cleanupIndex.get<unsolicited>().begin());
-    return true;
-  }
-
-  // evict by staleness
-  if (!m_cleanupIndex.get<byStaleness>().empty() &&
-      (*m_cleanupIndex.get<byStaleness>().begin())->getStaleTime() < time::steady_clock::now())
-  {
-    NFD_LOG_TRACE("Evict from staleness queue");
-
-    eraseFromSkipList(*m_cleanupIndex.get<byStaleness>().begin());
-    m_cleanupIndex.get<byStaleness>().erase(m_cleanupIndex.get<byStaleness>().begin());
-    return true;
-  }
-
-  // evict by arrival
-  if (!m_cleanupIndex.get<byArrival>().empty())
-  {
-    NFD_LOG_TRACE("Evict from arrival queue");
-
-    eraseFromSkipList(*m_cleanupIndex.get<byArrival>().begin());
-    m_cleanupIndex.get<byArrival>().erase(m_cleanupIndex.get<byArrival>().begin());
-    return true;
-  }
-
-*/
   return false;
 }
 
@@ -462,219 +186,8 @@ Cs::find(const Interest& interest) const
   else
       return 0;
 
-/*
-  bool isIterated = false;
-  SkipList::const_reverse_iterator topLayer = m_skipList.rbegin();
-  SkipListLayer::iterator head = (*topLayer)->begin();
-
-  if (!(*topLayer)->empty())
-    {
-      //start from the upper layer towards bottom
-      int layer = m_skipList.size() - 1;
-      for (SkipList::const_reverse_iterator rit = topLayer; rit != m_skipList.rend(); ++rit)
-        {
-          //if we didn't do any iterations on the higher layers, start from the begin() again
-          if (!isIterated)
-            head = (*rit)->begin();
-
-          if (head != (*rit)->end())
-            {
-              // it happens when begin() contains the element we want to find
-              if (!isIterated && (interest.getName().isPrefixOf((*head)->getFullName())))
-                {
-                  if (layer > 0)
-                    {
-                      layer--;
-                      continue; // try lower layer
-                    }
-                  else
-                    {
-                      isIterated = true;
-                    }
-                }
-              else
-                {
-                  SkipListLayer::iterator it = head;
-
-                  while ((*it)->getFullName() < interest.getName())
-                    {
-                      NFD_LOG_TRACE((*it)->getFullName() << " < " << interest.getName());
-                      head = it;
-                      isIterated = true;
-
-                      ++it;
-                      if (it == (*rit)->end())
-                        break;
-                    }
-                }
-            }
-
-          if (layer > 0)
-            {
-              head = (*head)->getIterators().find(layer - 1)->second; // move HEAD to the lower layer
-            }
-          else //if we reached the first layer
-            {
-              if (isIterated)
-                return selectChild(interest, head);
-            }
-
-          layer--;
-        }
-    }
-
-  return 0;
-*/
 }
 
-/*
-const Data*
-Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const
-{
-  BOOST_ASSERT(startingPoint != (*m_skipList.begin())->end());
-
-  if (startingPoint != (*m_skipList.begin())->begin())
-    {
-      BOOST_ASSERT((*startingPoint)->getFullName() < interest.getName());
-    }
-
-  NFD_LOG_TRACE("selectChild() " << interest.getChildSelector() << " "
-                << (*startingPoint)->getFullName());
-
-  bool hasLeftmostSelector = (interest.getChildSelector() <= 0);
-  bool hasRightmostSelector = !hasLeftmostSelector;
-
-  if (hasLeftmostSelector)
-    {
-      bool doesInterestContainDigest = recognizeInterestWithDigest(interest, *startingPoint);
-      bool isInPrefix = false;
-
-      if (doesInterestContainDigest)
-        {
-          isInPrefix = interest.getName().getPrefix(-1).isPrefixOf((*startingPoint)->getFullName());
-        }
-      else
-        {
-          isInPrefix = interest.getName().isPrefixOf((*startingPoint)->getFullName());
-        }
-
-      if (isInPrefix)
-        {
-          if (doesComplyWithSelectors(interest, *startingPoint, doesInterestContainDigest))
-            {
-              return &(*startingPoint)->getData();
-            }
-        }
-    }
-
-  //iterate to the right
-  SkipListLayer::iterator rightmost = startingPoint;
-  if (startingPoint != (*m_skipList.begin())->end())
-    {
-      SkipListLayer::iterator rightmostCandidate = startingPoint;
-      Name currentChildPrefix("");
-
-      while (true)
-        {
-          ++rightmostCandidate;
-
-          bool isInBoundaries = (rightmostCandidate != (*m_skipList.begin())->end());
-          bool isInPrefix = false;
-          bool doesInterestContainDigest = false;
-          if (isInBoundaries)
-            {
-              doesInterestContainDigest = recognizeInterestWithDigest(interest,
-                                                                      *rightmostCandidate);
-
-              if (doesInterestContainDigest)
-                {
-                  isInPrefix = interest.getName().getPrefix(-1)
-                                 .isPrefixOf((*rightmostCandidate)->getFullName());
-                }
-              else
-                {
-                  isInPrefix = interest.getName().isPrefixOf((*rightmostCandidate)->getFullName());
-                }
-            }
-
-          if (isInPrefix)
-            {
-              if (doesComplyWithSelectors(interest, *rightmostCandidate, doesInterestContainDigest))
-                {
-                  if (hasLeftmostSelector)
-                    {
-                      return &(*rightmostCandidate)->getData();
-                    }
-
-                  if (hasRightmostSelector)
-                    {
-                      if (doesInterestContainDigest)
-                        {
-                          // get prefix which is one component longer than Interest name
-                          // (without digest)
-                          const Name& childPrefix = (*rightmostCandidate)->getFullName()
-                                                      .getPrefix(interest.getName().size());
-                          NFD_LOG_TRACE("Child prefix" << childPrefix);
-
-                          if (currentChildPrefix.empty() || (childPrefix != currentChildPrefix))
-                            {
-                              currentChildPrefix = childPrefix;
-                              rightmost = rightmostCandidate;
-                            }
-                        }
-                      else
-                        {
-                          // get prefix which is one component longer than Interest name
-                          const Name& childPrefix = (*rightmostCandidate)->getFullName()
-                                                      .getPrefix(interest.getName().size() + 1);
-                          NFD_LOG_TRACE("Child prefix" << childPrefix);
-
-                          if (currentChildPrefix.empty() || (childPrefix != currentChildPrefix))
-                            {
-                              currentChildPrefix = childPrefix;
-                              rightmost = rightmostCandidate;
-                            }
-                        }
-                    }
-                }
-            }
-          else
-            break;
-        }
-    }
-
-  if (rightmost != startingPoint)
-    {
-      return &(*rightmost)->getData();
-    }
-
-  if (hasRightmostSelector) // if rightmost was not found, try starting point
-    {
-      bool doesInterestContainDigest = recognizeInterestWithDigest(interest, *startingPoint);
-      bool isInPrefix = false;
-
-      if (doesInterestContainDigest)
-        {
-          isInPrefix = interest.getName().getPrefix(-1).isPrefixOf((*startingPoint)->getFullName());
-        }
-      else
-        {
-          isInPrefix = interest.getName().isPrefixOf((*startingPoint)->getFullName());
-        }
-
-      if (isInPrefix)
-        {
-          if (doesComplyWithSelectors(interest, *startingPoint, doesInterestContainDigest))
-            {
-              return &(*startingPoint)->getData();
-            }
-        }
-    }
-
-  return 0;
-}
-
-*/
 bool
 Cs::doesComplyWithSelectors(const Interest& interest,
                             cs::Entry* entry,
@@ -818,99 +331,8 @@ Cs::erase(const Name& exactName)
   CSPool.push(it->second);
   m_nPackets--;
   return;
-/*
-
-  bool isIterated = false;
-  SkipListLayer::iterator updateTable[SKIPLIST_MAX_LAYERS];
-  SkipList::reverse_iterator topLayer = m_skipList.rbegin();
-  SkipListLayer::iterator head = (*topLayer)->begin();
-
-  if (!(*topLayer)->empty())
-    {
-      //start from the upper layer towards bottom
-      int layer = m_skipList.size() - 1;
-      for (SkipList::reverse_iterator rit = topLayer; rit != m_skipList.rend(); ++rit)
-        {
-          //if we didn't do any iterations on the higher layers, start from the begin() again
-          if (!isIterated)
-            head = (*rit)->begin();
-
-          updateTable[layer] = head;
-
-          if (head != (*rit)->end())
-            {
-              // it can happen when begin() contains the element we want to remove
-              if (!isIterated && ((*head)->getFullName() == exactName))
-                {
-                  eraseFromSkipList(*head);
-                  return;
-                }
-              else
-                {
-                  SkipListLayer::iterator it = head;
-
-                  while ((*it)->getFullName() < exactName)
-                    {
-                      head = it;
-                      updateTable[layer] = it;
-                      isIterated = true;
-
-                      ++it;
-                      if (it == (*rit)->end())
-                        break;
-                    }
-                }
-            }
-
-          if (layer > 0)
-            head = (*head)->getIterators().find(layer - 1)->second; // move HEAD to the lower layer
-
-          layer--;
-        }
-    }
-  else
-    {
-      return;
-    }
-
-  head = updateTable[0];
-  ++head; // look at the next slot to check if it contains the item we want to remove
-
-  bool isCsEmpty = (size() == 0);
-  bool isInBoundaries = (head != (*m_skipList.begin())->end());
-  bool isNameIdentical = false;
-  if (!isCsEmpty && isInBoundaries)
-    {
-      NFD_LOG_TRACE("Identical? " << (*head)->getFullName());
-      isNameIdentical = (*head)->getFullName() == exactName;
-    }
-
-  if (isNameIdentical)
-    {
-      NFD_LOG_TRACE("Found target " << (*head)->getFullName());
-      eraseFromSkipList(*head);
-    }
-*/
 }
 
-/*
-void
-Cs::printSkipList() const
-{
-  NFD_LOG_TRACE("print()");
-  //start from the upper layer towards bottom
-  int layer = m_skipList.size() - 1;
-  for (SkipList::const_reverse_iterator rit = m_skipList.rbegin(); rit != m_skipList.rend(); ++rit)
-    {
-      for (SkipListLayer::iterator it = (*rit)->begin(); it != (*rit)->end(); ++it)
-        {
-          NFD_LOG_TRACE("Layer " << layer << " " << (*it)->getFullName());
-        }
-      layer--;
-    }
-}
-
-*/
 // adding new methods for data structure
 //bool
 //Cs::insertTable(const Data& data, bool isUnsolicited)
@@ -945,10 +367,7 @@ Cs::eraseFromTable(cs::Entry* entry)
 
   // access iterator
   boost::unordered_map<std::string,cs::Entry*>::iterator it;
-  //std::map<std::string,cs::Entry*>::iterator it;
-  //std::map<Name,cs::Entry*>::iterator it;
   it=CSMap.find(entry->getName().toUri());
-  //it=CSMap.find(entry->getName());
   CSMap.erase (it); 
 
   return true;
