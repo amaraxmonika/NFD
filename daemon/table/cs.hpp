@@ -39,6 +39,9 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/identity.hpp>
 
+// for hash map
+#include <boost/unordered_map.hpp>
+
 #include <queue>
 #include <deque>
 #include <map>
@@ -245,8 +248,8 @@ private:
   // and this 
   std::queue<cs::Entry*> CSPool; // memory pool for CSQueue
   std::deque<cs::Entry*> CSQueue; // queue of CS Entries
-  //std::unordered_map<std::string,cs::Entry*> CSMap; // map of CS Entries
-  std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
+  boost::unordered_map<std::string,cs::Entry*> CSMap; // map of CS Entries
+  //std::map<std::string,cs::Entry*> CSMap; // map of CS Entries
 };
 
 } // namespace nfd

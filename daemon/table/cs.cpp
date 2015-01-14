@@ -450,7 +450,8 @@ Cs::find(const Interest& interest) const
 {
   NFD_LOG_TRACE("find() " << interest.getName());
   NFD_LOG_TRACE("find().getUri() " << interest.getName().toUri());
-  std::map<std::string,cs::Entry*>::const_iterator it;
+  boost::unordered_map<std::string,cs::Entry*>::const_iterator it;
+  //std::map<std::string,cs::Entry*>::const_iterator it;
   //std::map<Name,cs::Entry*>::const_iterator it;
   it = CSMap.find(interest.getName().toUri());
   if(it!=CSMap.end())
@@ -808,7 +809,8 @@ Cs::erase(const Name& exactName)
 
   // added by chase for new data structure
   // Get Entity
-  std::map<std::string,cs::Entry*>::iterator it;
+  boost::unordered_map<std::string,cs::Entry*>::iterator it;
+  //std::map<std::string,cs::Entry*>::iterator it;
   //std::map<Name,cs::Entry*>::iterator it;
   it=CSMap.find(exactName.toUri());
   //it->second->release(); 
@@ -942,7 +944,8 @@ Cs::eraseFromTable(cs::Entry* entry)
   //m_nPackets--;
 
   // access iterator
-  std::map<std::string,cs::Entry*>::iterator it;
+  boost::unordered_map<std::string,cs::Entry*>::iterator it;
+  //std::map<std::string,cs::Entry*>::iterator it;
   //std::map<Name,cs::Entry*>::iterator it;
   it=CSMap.find(entry->getName().toUri());
   //it=CSMap.find(entry->getName());
