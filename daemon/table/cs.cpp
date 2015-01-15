@@ -157,7 +157,7 @@ Cs::evictItem()
 
     // release all references to entry
     // and add entry back to memory pool
-    //entry->release();
+    entry->release();
     CSPool.push(entry);
 
    
@@ -173,14 +173,14 @@ const Data*
 Cs::find(const Interest& interest) const
 {
   NFD_LOG_TRACE("find() " << interest.getName());
-  NFD_LOG_TRACE("find().getUri() " << interest.getName().toUri());
+  //NFD_LOG_TRACE("find().getUri() " << interest.getName().toUri());
   boost::unordered_map<std::string,cs::Entry*>::const_iterator it;
   //std::map<std::string,cs::Entry*>::const_iterator it;
   //std::map<Name,cs::Entry*>::const_iterator it;
   it = CSMap.find(interest.getName().toUri());
   if(it!=CSMap.end())
   {
-      NFD_LOG_TRACE("find():and(it->second... " << it->second->getName());
+      //NFD_LOG_TRACE("find():and(it->second... " << it->second->getName());
       return &(it->second->getData());
   }
   else
@@ -354,6 +354,7 @@ Cs::insertTable(cs::Entry* entry, bool isUnsolicited){
   return true; // need to change
 }
 
+// not currently used
 bool
 Cs::eraseFromTable(cs::Entry* entry)
 {
@@ -378,7 +379,7 @@ Cs::insertQueue(const Data& data, bool isUnsolicited)
   // get memory from pool
   cs::Entry* entry = CSPool.front();
   CSPool.pop();
-  m_nPackets++; // increment number of packets in map
+  //m_nPackets++; // increment number of packets in map
   
   // set contents of new entry
   entry->setData(data, isUnsolicited);
@@ -394,6 +395,7 @@ Cs::insertQueue(const Data& data, bool isUnsolicited)
   return entry;
 }
 
+// Not currently used
 cs::Entry*
 Cs::eraseFromQueue(){
 
