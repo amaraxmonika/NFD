@@ -149,8 +149,11 @@ Cs::evictItem()
   if (!CSQueue.empty())
   {
     // get first item in queue
-    cs::Entry* entry = CSQueue.front();
-    std::string key = entry->getName().toUri();
+    cs::Entry* entry = CSQueue.front(); // testing here
+    CSQueue.pop_front();
+    //const std::string& key = entry->getName().toUri();
+    const Name& m_name = entry->getName();
+    const std::string& key = m_name.toUri();
 
     // remove entry from CSMap
     CSMap.erase(key);
